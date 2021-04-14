@@ -1,0 +1,72 @@
+# To execute this docker-compose yml file use `docker-compose -f <file_name> up`
+# Add the `-d` flag at the end for detached execution
+version: "3.7"
+services:
+  selenium-hub:
+    image: selenium/hub:3.141.59-20200730
+    container_name: selenium-hub
+    networks:
+      wd_grid_net:
+        ipv4_address: 172.16.238.10
+    ports:
+      - "4444:4444"
+      - "5555:5555"
+      # VNC: See what's going on by connecting your VNC client to 0.0.0.0:5900
+      - "5900:25900"
+        # noVNC: See what's going on by hitting http://0.0.0.0:6080 in your browser
+      #        Important: http://127.0.0.1:6080 works but http://localhost:6080 doesn't
+      - "6080:26080"
+    extra_hosts:
+      - "www.mu.host:ip_address"
+    environment:
+      - NODE_MAX_INSTANCES=3
+      - NODE_MAX_SESSION=3
+      - GRID=true
+      - GRID_DEBUG=true
+      - DEBUG=true
+      - GRID_BROWSER_TIMEOUT=3000
+      - GRID_TIMEOUT=3000
+  #    command: ["./wait-for-grid.sh"]
+
+  chrome:
+    image: selenium/node-chrome:3.141.59-20200730
+    networks:
+      wd_grid_net:
+        ipv4_address: 172.16.238.11
+    volumes:
+      - /dev/shm:/dev/shm
+    depends_on:
+      - selenium-hub
+    extra_hosts:
+      - "www.mu.host:ip_address"
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - CHROME=true
+      - FIREFOX=false
+      - DEBUG=true
+
+  chrome2:
+    image: selenium/node-chrome:3.141.59-20200730
+    networks:
+      wd_grid_net:
+        ipv4_address: 172.16.238.12
+    volumes:
+      - /dev/shm:/dev/shm
+    depends_on:
+      - selenium-hub
+    extra_hosts:
+      - "www.mu.host:ip_address"
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - CHROME=true
+      - FIREFOX=false
+      - DEBUG=true
+
+networks:
+  wd_grid_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.238.0/24"
